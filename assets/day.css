@@ -1,0 +1,79 @@
+/* Loaded after style.css only in day mode, including all native dialogs. */
+window, dialog { background: #edf2f6; color: #243345; }
+headerbar { background: #e3ebf2; border-bottom-color: #bdcbd7; }
+headerbar .title { color: #243345; }
+button { color: #394e63; }
+button:hover { background: #d8e4ee; color: #152b3b; }
+button:active, button:checked { background: #c6dce2; color: #153d46; }
+button:focus { border-color: #2c816d; }
+.sidebar { background: #e4edf3; border-right-color: #bdcbd7; }
+.brand, .workspace-heading, .session-name, .terminal-title, .settings-title { color: #22384b; }
+.brand-icon, .empty-art { color: #247e67; }
+.eyebrow, .muted, .number, .section-label, .session-status { color: #52697d; }
+.subtle { color: #445d73; }
+.primary { color: #ffffff; background: #267663; border-color: #267663; }
+.primary:hover { color: #ffffff; background: #1e6454; }
+.session-card:hover { background: #d5e2ec; }
+.session-card.active { background: #d3e9e3; border-color: #69a490; }
+.session-card.unread { background: #d6ebd7; border-color: #6b9970; }
+.session-card.pulse-high { background: #b9ddbf; border-color: #467e50; }
+.unread .session-status { color: #275b34; }
+.sidebar-bottom, .setting-row { border-color: #c4d0da; }
+.terminal-panel { background: #f8fafc; border-color: #aabdcf; }
+.terminal-toolbar { background: #e4ecf4; border-bottom-color: #bbcbd9; }
+.terminal-mode { color: #355775; }
+.terminal-mode-box { background: #d1dfe9; }
+.terminal-bottom { border-color: #d0dbe5; color: #52697d; }
+.notice { background: #d6ebdf; border-color: #85b59b; color: #225337; }
+.empty-title { color: #284e40; }
+.danger { color: #a82f38; }
+entry, spinbutton { background: #ffffff; color: #23374b; border-color: #9eafbf; }
+switch { background: #c6d2dc; }
+switch:checked { background: #267663; }
+switch slider { background: #ffffff; }
+menu, popover { background: #f5f8fb; color: #243345; border-color: #adbfce; }
+menuitem:hover { background: #d7e8e5; }
+tooltip { background: #e5eef5; color: #243345; border-color: #aabccc; }
+scrollbar slider { background: #98abbe; }
+scrollbar slider:hover { background: #6a849d; }
+selection { background: #b6dbd2; color: #153d33; }
+separator { background: #c4d0da; }
+.directory-chooser { background: #edf2f6; color: #243345; }
+.directory-chooser filechooser,
+.directory-chooser filechooser box,
+.directory-chooser paned { background-color: #edf2f6; color: #243345; }
+.directory-chooser .view,
+.directory-chooser treeview.view,
+.directory-chooser viewport,
+.directory-chooser scrolledwindow { background: #f8fafc; color: #243345; }
+.directory-chooser treeview.view { border-color: #bdcbd7; }
+.directory-chooser treeview.view header button { background: #e1eaf2; color: #314e67; border-bottom-color: #bdcbd7; }
+.directory-chooser treeview.view header button:hover { background: #d3e1eb; color: #203d54; }
+.directory-chooser placessidebar,
+.directory-chooser placessidebar list,
+.directory-chooser .sidebar,
+.directory-chooser .sidebar list { background: #e4edf3; color: #314e67; }
+.directory-chooser placessidebar row,
+.directory-chooser .sidebar row { background: transparent; color: #314e67; }
+.directory-chooser placessidebar row:hover,
+.directory-chooser .sidebar row:hover,
+.directory-chooser treeview.view:hover { background: #dce7ef; color: #243345; }
+.directory-chooser treeview.view:selected,
+.directory-chooser row:selected,
+.directory-chooser .sidebar row:selected,
+.directory-chooser placessidebar row:selected { background: #c7e2da; color: #183c33; }
+.directory-chooser treeview.view:disabled,
+.directory-chooser row:disabled,
+.directory-chooser label:disabled,
+.directory-chooser image:disabled { color: #697b8b; }
+.directory-chooser button { color: #35536c; }
+.directory-chooser button:hover { background: #d4e3ed; color: #183b55; }
+.directory-chooser button:checked { background: #c7e2da; color: #183c33; border-color: #73a694; }
+.directory-chooser button:disabled { color: #697b8b; }
+.directory-chooser button.primary { background: #267663; color: #ffffff; border-color: #267663; }
+.directory-chooser button.primary:hover { background: #1e6454; color: #ffffff; }
+.directory-chooser button.primary:disabled { background: #d0ded9; color: #536a60; border-color: #a8bcb3; }
+.directory-chooser entry { background: #ffffff; color: #243345; border-color: #8ca7bb; }
+.directory-chooser entry:focus { border-color: #267663; }
+.directory-chooser entry selection { background: #c7e2da; color: #183c33; }
+.directory-chooser separator { background: #bdcbd7; }

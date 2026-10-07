@@ -1,0 +1,85 @@
+{
+  "id": "oneesan-wine",
+  "name": "酒红温柔",
+  "display_height": 144,
+  "frame_size": [
+    186,
+    320
+  ],
+  "anchor": [
+    0.5,
+    0.9845857418111753
+  ],
+  "source_sha256": "17fb2775ca86ea5e37003fb0e456317cab85298dcca98b2093f7b11d172ad300",
+  "source_bounds": [
+    [
+      136,
+      10,
+      303,
+      507
+    ],
+    [
+      484,
+      10,
+      652,
+      508
+    ],
+    [
+      834,
+      10,
+      1089,
+      492
+    ],
+    [
+      1223,
+      11,
+      1431,
+      501
+    ],
+    [
+      87,
+      520,
+      356,
+      997
+    ],
+    [
+      483,
+      520,
+      702,
+      1002
+    ],
+    [
+      892,
+      501,
+      1096,
+      1002
+    ],
+    [
+      1255,
+      497,
+      1462,
+      1000
+    ]
+  ],
+  "idle": [
+    "frame-00.png",
+    "frame-01.png"
+  ],
+  "walk": [
+    "frame-02.png",
+    "frame-03.png",
+    "frame-04.png",
+    "frame-05.png"
+  ],
+  "climb": [
+    "frame-06.png",
+    "frame-07.png"
+  ],
+  "fps": {
+    "idle": 1,
+    "walk": 3,
+    "climb": 2
+  },
+  "direction": "right",
+  "rotate_whole_character": false
+}

@@ -1,0 +1,85 @@
+{
+  "id": "oneesan-silver",
+  "name": "银发冷艳",
+  "display_height": 144,
+  "frame_size": [
+    200,
+    320
+  ],
+  "anchor": [
+    0.5,
+    0.9847908745247148
+  ],
+  "source_sha256": "a922cff5ff1527618c09893af49c11ba2a967b86a035ce48cf0e876220313dcc",
+  "source_bounds": [
+    [
+      108,
+      8,
+      299,
+      484
+    ],
+    [
+      460,
+      8,
+      651,
+      483
+    ],
+    [
+      805,
+      8,
+      1084,
+      479
+    ],
+    [
+      1183,
+      8,
+      1444,
+      479
+    ],
+    [
+      59,
+      494,
+      335,
+      977
+    ],
+    [
+      447,
+      496,
+      701,
+      974
+    ],
+    [
+      833,
+      481,
+      1073,
+      989
+    ],
+    [
+      1205,
+      480,
+      1456,
+      990
+    ]
+  ],
+  "idle": [
+    "frame-00.png",
+    "frame-01.png"
+  ],
+  "walk": [
+    "frame-02.png",
+    "frame-03.png",
+    "frame-04.png",
+    "frame-05.png"
+  ],
+  "climb": [
+    "frame-06.png",
+    "frame-07.png"
+  ],
+  "fps": {
+    "idle": 1,
+    "walk": 3,
+    "climb": 2
+  },
+  "direction": "right",
+  "rotate_whole_character": false
+}

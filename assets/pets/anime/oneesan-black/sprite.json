@@ -1,0 +1,85 @@
+{
+  "id": "oneesan-black",
+  "name": "黑发职装",
+  "display_height": 144,
+  "frame_size": [
+    208,
+    320
+  ],
+  "anchor": [
+    0.5,
+    0.9848484848484849
+  ],
+  "source_sha256": "22b6a18dfd7589469e408435c68198abb4f0dc622582eb1f682b734f028e6360",
+  "source_bounds": [
+    [
+      147,
+      0,
+      309,
+      501
+    ],
+    [
+      505,
+      0,
+      667,
+      501
+    ],
+    [
+      844,
+      0,
+      1114,
+      493
+    ],
+    [
+      1219,
+      1,
+      1405,
+      498
+    ],
+    [
+      97,
+      514,
+      376,
+      1003
+    ],
+    [
+      480,
+      513,
+      675,
+      1008
+    ],
+    [
+      842,
+      495,
+      1104,
+      1007
+    ],
+    [
+      1227,
+      499,
+      1475,
+      1005
+    ]
+  ],
+  "idle": [
+    "frame-00.png",
+    "frame-01.png"
+  ],
+  "walk": [
+    "frame-02.png",
+    "frame-03.png",
+    "frame-04.png",
+    "frame-05.png"
+  ],
+  "climb": [
+    "frame-06.png",
+    "frame-07.png"
+  ],
+  "fps": {
+    "idle": 1,
+    "walk": 3,
+    "climb": 2
+  },
+  "direction": "right",
+  "rotate_whole_character": false
+}

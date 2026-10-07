@@ -1,0 +1,97 @@
+window, dialog { background: #14181e; color: #e4e8ee; font-family: "Noto Sans CJK SC", "Noto Sans", sans-serif; font-size: 13px; }
+headerbar { background: #191e25; border: 0; border-bottom: 1px solid #30353e; box-shadow: none; min-height: 42px; }
+headerbar .title { color: #dde4ec; font-weight: 600; }
+button { background: transparent; color: #abb5c1; border: 1px solid transparent; border-radius: 8px; padding: 8px 11px; box-shadow: none; text-shadow: none; }
+button:hover { background: #2b333f; color: #f1f4f8; }
+button:focus { border-color: #7bc5b1; }
+button:active { background: #34404b; }
+button:disabled { opacity: 0.4; }
+.sidebar { background: #1a1f27; border-right: 1px solid #303640; }
+.brand { color: #f0f4f7; font-size: 23px; font-weight: 700; letter-spacing: -1px; }
+.brand-icon { color: #94d6c2; font-size: 29px; }
+.eyebrow { color: #738190; font-size: 10px; letter-spacing: 2px; }
+.muted { color: #798594; font-size: 11px; }
+.subtle { color: #a3adba; font-size: 12px; }
+.section-label { color: #8793a2; font-size: 11px; font-weight: 600; }
+.primary { color: #13291f; background: #9adcc4; border-color: #9adcc4; font-weight: 700; }
+.primary:hover { color: #10231b; background: #b2ecd7; }
+.new-session { padding: 12px 14px; border-radius: 10px; }
+.session-card { border: 1px solid transparent; border-radius: 10px; padding: 7px 7px 7px 0; margin: 4px 10px; }
+.session-card:hover { background: #242b35; }
+.session-card.active { background: #2a343d; border-color: #465d60; }
+.session-card.unread { background: #253d34; border-color: #71b79b; }
+.session-card.pulse-high { background: #355647; border-color: #b4f1cc; }
+.session-name { color: #e1e7ed; font-size: 13px; font-weight: 600; }
+.session-status { color: #82919f; font-size: 10px; }
+.unread .session-status { color: #a7ebc7; }
+.number { color: #596674; font-size: 10px; }
+.sidebar-bottom { border-top: 1px solid #303640; padding: 12px; }
+.workspace-heading { color: #e5eaf1; font-size: 22px; font-weight: 600; }
+.terminal-panel { background: #11151a; border: 1px solid #3b4550; border-radius: 10px; }
+.terminal-toolbar { background: #202731; border-bottom: 1px solid #343e49; border-radius: 9px 9px 0 0; padding: 5px 12px; }
+.terminal-title { color: #dce3eb; font-size: 12px; }
+.terminal-mode { color: #92a0b0; font-family: monospace; font-size: 10px; }
+.terminal-mode-box { background: #303947; border-radius: 5px; padding: 2px 9px; }
+.terminal-bottom { border-top: 1px solid #252d37; padding: 7px 13px; color: #778493; font-size: 10px; }
+.notice { background: #233c33; border: 1px solid #4b775f; border-radius: 9px; padding: 9px 12px; color: #baedcf; }
+.empty-title { font-size: 24px; color: #dde8e1; font-weight: 600; }
+.empty-art { font-size: 64px; color: #8bcbb6; }
+.settings-title { font-size: 17px; font-weight: 600; color: #e2e8ef; }
+.setting-row { padding: 13px 0; border-bottom: 1px solid #303943; }
+.danger { color: #eda6a4; }
+entry, spinbutton { background: #11161d; color: #e1e7ed; border: 1px solid #445361; border-radius: 6px; padding: 8px; }
+switch { background: #384350; border-radius: 20px; }
+switch:checked { background: #87cdb3; }
+switch slider { background: #d9e8e2; border-radius: 20px; min-width: 18px; min-height: 18px; }
+menu { background: #242c37; color: #e1e7ed; padding: 6px; border: 1px solid #3d4958; border-radius: 7px; }
+menuitem { padding: 9px 15px; border-radius: 5px; }
+menuitem:hover { background: #394b52; }
+tooltip { background: #28323c; color: #e0e8ee; border: 1px solid #44535f; border-radius: 6px; }
+scrollbar { background: transparent; }
+scrollbar slider { background: #3d4957; border-radius: 5px; min-width: 5px; min-height: 30px; }
+scrollbar slider:hover { background: #617285; }
+selection { background: #436158; color: #f1f5f4; }
+separator { background: #333b46; min-height: 1px; }
+
+/* Native folder chooser: explicit surfaces prevent mixed light/dark system themes. */
+.directory-chooser { background: #1b222c; color: #edf2f7; }
+.directory-chooser filechooser,
+.directory-chooser filechooser box,
+.directory-chooser paned { background-color: #1b222c; color: #edf2f7; }
+.directory-chooser label,
+.directory-chooser image { color: inherit; }
+.directory-chooser .view,
+.directory-chooser treeview.view,
+.directory-chooser viewport,
+.directory-chooser scrolledwindow { background: #202833; color: #edf2f7; }
+.directory-chooser treeview.view { border-color: #435163; }
+.directory-chooser treeview.view header button { background: #293443; color: #dce6f1; border-bottom: 1px solid #4a5c70; border-radius: 0; }
+.directory-chooser treeview.view header button:hover { background: #344357; color: #ffffff; }
+.directory-chooser placessidebar,
+.directory-chooser placessidebar list,
+.directory-chooser .sidebar,
+.directory-chooser .sidebar list { background: #18212b; color: #e2eaf3; }
+.directory-chooser placessidebar row,
+.directory-chooser .sidebar row { background: transparent; color: #e2eaf3; }
+.directory-chooser placessidebar row:hover,
+.directory-chooser .sidebar row:hover,
+.directory-chooser treeview.view:hover { background: #2c3b4b; color: #ffffff; }
+.directory-chooser treeview.view:selected,
+.directory-chooser row:selected,
+.directory-chooser .sidebar row:selected,
+.directory-chooser placessidebar row:selected { background: #315d70; color: #ffffff; }
+.directory-chooser treeview.view:disabled,
+.directory-chooser row:disabled,
+.directory-chooser label:disabled,
+.directory-chooser image:disabled { color: #aebdcd; }
+.directory-chooser button { color: #e0e9f3; }
+.directory-chooser button:hover { background: #344357; color: #ffffff; }
+.directory-chooser button:checked { background: #315d70; color: #ffffff; border-color: #6bacc4; }
+.directory-chooser button:disabled { color: #aebdcd; opacity: 1; }
+.directory-chooser button.primary { background: #9adcc4; color: #13291f; border-color: #9adcc4; }
+.directory-chooser button.primary:hover { background: #b2ecd7; color: #10231b; }
+.directory-chooser button.primary:disabled { background: #364c48; color: #b8c9c3; border-color: #536a63; }
+.directory-chooser entry { background: #131c26; color: #f1f5fa; border-color: #60798e; }
+.directory-chooser entry:focus { border-color: #9adcc4; }
+.directory-chooser entry selection { background: #315d70; color: #ffffff; }
+.directory-chooser separator { background: #435163; }

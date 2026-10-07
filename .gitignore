@@ -1,0 +1,56 @@
+# Local sessions, settings, credentials and tool configuration
+/.state/
+/.runtime/
+/.publish/
+/.codex/
+/.agents/
+/.aws/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python / editor caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime captures and local verification (may contain project paths)
+/artifacts/
+/tmp/
+/output/
+*.log
+*.tmp
+*.bak
+*.backup
+*.orig
+*.swp
+*.swo
+*~
+backups/
+backup/
+
+# Original artwork / generation notes; keep the processed runtime assets
+/assets/avatars/*.png
+/assets/pets/anime/*.png
+**/source-sheet.png
+**/originals/
+/assets/pets/anime/prompts.md
+/头像生图提示词_*.md
+
+# Build / local release bundles
+/build/
+/dist/
+*.egg-info/
+*.bundle

@@ -1,0 +1,76 @@
+{
+  "id": "portraits",
+  "name": "御姐头像 · 10 款",
+  "items": [
+    {
+      "id": "portrait-01",
+      "name": "黑发微笑",
+      "file": "portrait-01.png",
+      "source": "黑发御姐微笑头像-1.png",
+      "source_sha256": "f9fd23efffda792741b06cbd64aaaaf3a9a7231e6bfb71fa3ab7564d5c99982f"
+    },
+    {
+      "id": "portrait-02",
+      "name": "银发冰眸",
+      "file": "portrait-02.png",
+      "source": "银发冰眸成熟女性头像-2.png",
+      "source_sha256": "1ccdb4945fe8609a1696d9fb4c5d4ed59b65f9cac5613e2695f4ade0ff997690"
+    },
+    {
+      "id": "portrait-03",
+      "name": "蜂蜜金马尾",
+      "file": "portrait-03.png",
+      "source": "蜂蜜金马尾自信女性头像-3.png",
+      "source_sha256": "3b0fb3f4dbc5866a3140a2df303f4e18cd444cf499b23f106718cf2632a7a569"
+    },
+    {
+      "id": "portrait-04",
+      "name": "酒红卷发",
+      "file": "portrait-04.png",
+      "source": "酒红卷发优雅女郎-4.png",
+      "source_sha256": "47ce30bb683a030cbd2e4412985482ff5b67895da53012ee140df402f5a0c585"
+    },
+    {
+      "id": "portrait-05",
+      "name": "玫瑰金卷发",
+      "file": "portrait-05.png",
+      "source": "玫瑰金卷发优雅女郎-5.png",
+      "source_sha256": "a19b67e453b09fe3cbb26ceecc3ec8eb340016b26361c83f73a9b917630ddb1c"
+    },
+    {
+      "id": "portrait-06",
+      "name": "蓝黑短发",
+      "file": "portrait-06.png",
+      "source": "蓝黑短发白衣回眸-6.png",
+      "source_sha256": "bb2ab6c459491cd8a488e98e659bc6ca62a5d0d2df6bbb0fff29260ee96b2ad2"
+    },
+    {
+      "id": "portrait-07",
+      "name": "深紫长发",
+      "file": "portrait-07.png",
+      "source": "深紫长发的神秘微笑-7.png",
+      "source_sha256": "1f73beb3608ad8b1627bfa76e12bd974b977f1e424ba132104265bd51e222e83"
+    },
+    {
+      "id": "portrait-08",
+      "name": "知性栗发",
+      "file": "portrait-08.png",
+      "source": "知性栗发女性头像-8.png",
+      "source_sha256": "80a26128ee1ab1646fdd7185f4e42da040034df25bbaeda9360b5f2a5a663601"
+    },
+    {
+      "id": "portrait-09",
+      "name": "珍珠白侧辫",
+      "file": "portrait-09.png",
+      "source": "珍珠白侧辫的优雅假日头像-9.png",
+      "source_sha256": "a82013ad2c45bad81ee7dcd9b48ee3048fa9558829020495791d584834b252a0"
+    },
+    {
+      "id": "portrait-10",
+      "name": "烟灰短发",
+      "file": "portrait-10.png",
+      "source": "烟灰短发琥珀眼成熟女性头像-10.png",
+      "source_sha256": "cfdc4b6f36b1c52c5557815599ac416c1444f4ebcd9867fd74edce159e8f347d"
+    }
+  ]
+}
