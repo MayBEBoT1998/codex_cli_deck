@@ -26,6 +26,7 @@ from .avatars import AvatarLibrary, SUPPORTED_IMAGES
 from .pet_layer import PetLayer
 from .pets import build_routes
 from .pet_sprites import build_sprite_routes
+from .coordination import Coordinator
 
 
 def styled(widget, *classes):
@@ -74,6 +75,8 @@ class Deck(Gtk.Window):
         self.settings = Settings(state_dir / "settings.json")
         self.avatar_library = AvatarLibrary(state_dir)
         self.codex = shutil.which("codex")
+        self.coordinator = Coordinator(self.runtime, None if args.demo or args.smoke_test else state_dir / "coordination.json")
+        self.coordination_panel = None
         self.sessions = []
         self.views = {}
         self.cards = {}
@@ -198,6 +201,7 @@ class Deck(Gtk.Window):
         header.pack_end(self.settings_button)
         self.theme_button = button("☀  日间", self.toggle_theme)
         header.pack_end(self.theme_button)
+        header.pack_end(button("⇄  Agent 协作", self.open_coordination, tooltip="选择任意发起者及它能控制的 Agent"))
         root = box()
         self.workspace_overlay = Gtk.Overlay()
         self.workspace_overlay.add(root)
@@ -468,9 +472,11 @@ class Deck(Gtk.Window):
         self.stack.add_named(scroller, session.id)
         self.views[session.id] = terminal
         self.make_card(session)
+        endpoint = self.coordinator.register(session, self.runtime / session.id)
         auto = self.settings.values["auto_codex"] and not (self.args.shell or self.args.demo or self.args.smoke_test)
         argv = prepare_session(self.runtime / session.id, session, self.codex, auto,
-                               clean_shell=bool(self.args.smoke_test or self.args.demo))
+                               clean_shell=bool(self.args.smoke_test or self.args.demo),
+                               coordination=None if self.args.smoke_test or self.args.demo else endpoint)
         env = dict(os.environ)
         # A new terminal is a peer, not a child tool of the session hosting this app.
         for key in ("CODEX_THREAD_ID", "CODEX_TURN_ID"):
@@ -615,6 +621,10 @@ class Deck(Gtk.Window):
             return False
         changed = False
         for session in self.sessions:
+            agent = self.coordinator.agents.get(session.id)
+            if agent and (agent.name, agent.cwd) != (session.name, session.cwd):
+                agent.name, agent.cwd = session.name, session.cwd
+                self.coordinator.revision += 1
             pid = self.pids.get(session.id)
             if pid:
                 try:
@@ -625,6 +635,9 @@ class Deck(Gtk.Window):
                 except OSError:
                     pass
             for event in drain_events(self.runtime / session.id / "events"):
+                if event.get("epoch") and event.get("type") != "agent-starting" and agent and event["epoch"] != agent.epoch:
+                    continue
+                self.coordinator.handle_event(session.id, event)
                 completed = session.apply(event)
                 changed = True
                 if completed:
@@ -635,6 +648,7 @@ class Deck(Gtk.Window):
                         self.get_display().beep()
         if changed:
             self.refresh()
+        self.coordinator.tick()
         return True
 
     def animate(self):
@@ -719,6 +733,7 @@ class Deck(Gtk.Window):
     def session_menu(self, session_id, event):
         menu = Gtk.Menu()
         for text, callback in [("重命名…", lambda: self.rename(session_id)),
+                               ("配置此 Agent 的控制范围…", lambda: self.open_coordination(session_id)),
                                ("更换角色…", lambda: self.choose_avatar(session_id)),
                                ("在指定目录新建…", self.choose_directory),
                                ("关闭终端", lambda: self.close_session(session_id))]:
@@ -730,6 +745,14 @@ class Deck(Gtk.Window):
             menu.popup_at_pointer(event)
         else:
             menu.popup_at_widget(self.codex_button, Gdk.Gravity.SOUTH_EAST, Gdk.Gravity.NORTH_EAST, None)
+
+    def open_coordination(self, source=None):
+        if self.coordination_panel is None:
+            from .coordination_ui import CoordinationPanel
+            self.coordination_panel = CoordinationPanel(self)
+        if source:
+            self.coordination_panel.source.set_active_id(source)
+        self.coordination_panel.present()
 
     def rename(self, session_id):
         session = self.get_session(session_id)
@@ -1039,6 +1062,7 @@ class Deck(Gtk.Window):
         if session_id in self.pids and not force and not self.confirm(f"关闭“{session.name}”？", "此终端内运行的 shell、Codex 和其他程序都会结束。"):
             return
         index = self.sessions.index(session)
+        self.coordinator.remove(session_id)
         victims = stop_processes(self.pids.pop(session_id, None))
         GLib.timeout_add(600, lambda: reap_stubborn(victims))
         self.sessions.remove(session)
@@ -1117,6 +1141,7 @@ class Deck(Gtk.Window):
             return
         self.save()
         self.closing = True
+        self.coordinator.close()
         self.cancel_sidebar_scroll()
         self.pet_layer.stop()
         victims = []

@@ -20,6 +20,21 @@ def main():
     args = [executable, "-c", "notify=" + json.dumps(callback, ensure_ascii=False), *sys.argv[2:]]
     emit_event(config["events"], {"type": "codex-start"})
     try:
+        if config.get("coordination") and "--no-daemon" not in sys.argv[2:]:
+            try:
+                from codex_deck.codex_relay import run_managed, supports_managed
+            except (ImportError, SyntaxError) as error:
+                print(f"协作模块未就绪，将以普通模式启动 Codex：{error}", file=sys.stderr)
+                emit_event(config["events"], {"type": "agent-unavailable", "message": str(error)})
+            else:
+                if supports_managed(sys.argv[2:]):
+                    signal.signal(signal.SIGINT, lambda *_: None)
+                    try:
+                        return run_managed(config, sys.argv[2:], callback)
+                    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
+                        print(f"协作连接失败：{error}\n可运行 codex --no-daemon 使用普通终端模式。", file=sys.stderr)
+                        emit_event(config["events"], {"type": "agent-unavailable", "message": str(error)})
+                        return 1
         child = subprocess.Popen(args)
         # The terminal sends Ctrl+C to the whole foreground group. Let Codex handle it.
         signal.signal(signal.SIGINT, lambda *_: None)

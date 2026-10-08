@@ -35,6 +35,7 @@ class Session:
     completed_at: float = 0
     turns: int = 0
     seen_turns: list[str] = field(default_factory=list)
+    agent_state: str = ""
 
     @property
     def status(self):
@@ -44,6 +45,9 @@ class Session:
             return "完成 · 待查看"
         if self.exited:
             return "终端已退出"
+        if self.codex_running and self.agent_state:
+            return {"idle": "Agent 空闲", "active": "Agent 执行中", "waiting": "等待审批或输入",
+                    "connecting": "Agent 连接中", "systemError": "Agent 连接异常"}.get(self.agent_state, "Codex 在线")
         if self.codex_running:
             return "Codex 在线"
         return "终端就绪"
@@ -56,6 +60,29 @@ class Session:
             self.exited = False
         elif kind == "codex-exit":
             self.codex_running = False
+            self.agent_state = ""
+        elif kind == "agent-starting":
+            self.agent_state = "connecting"
+        elif kind == "agent-bound":
+            self.agent_state = (event.get("status") or {}).get("type", "idle")
+        elif kind == "agent-disconnected":
+            self.agent_state = ""
+        elif kind == "agent-event":
+            params = event.get("params", {})
+            method = event.get("method")
+            if method == "thread/status/changed":
+                state = params.get("status", {})
+                self.agent_state = "waiting" if state.get("activeFlags") else state.get("type", "")
+            elif method == "turn/started":
+                self.agent_state = "active"
+            elif method == "turn/completed":
+                self.agent_state = "idle"
+                turn = params.get("turn", {})
+                if turn.get("status") == "completed":
+                    final = "\n".join(item.get("text", "") for item in turn.get("items", [])
+                                      if item.get("type") == "agentMessage" and item.get("phase") != "commentary")
+                    return self.apply({"type": "agent-turn-complete", "turn-id": turn.get("id"),
+                                       "last-assistant-message": final})
         elif kind == "agent-turn-complete":
             turn = str(event.get("turn-id") or event.get("event-id") or "")
             if turn and turn in self.seen_turns:
@@ -142,7 +169,7 @@ def drain_events(directory):
     events = []
     for path in sorted(Path(directory).glob("*.json"))[:100]:
         try:
-            if path.stat().st_size <= 65536:
+            if path.stat().st_size <= 1_000_000:
                 event = json.loads(path.read_text(encoding="utf-8"))
                 if isinstance(event, dict):
                     events.append(event)
@@ -153,7 +180,7 @@ def drain_events(directory):
     return events
 
 
-def prepare_session(directory, session, codex, auto_codex=False, clean_shell=False):
+def prepare_session(directory, session, codex, auto_codex=False, clean_shell=False, coordination=None):
     """Install an isolated shell wrapper; never edit the user's shell/Codex config."""
     directory = Path(directory)
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -163,6 +190,8 @@ def prepare_session(directory, session, codex, auto_codex=False, clean_shell=Fal
     bin_dir.mkdir(mode=0o700, exist_ok=True)
     config = {"events": str(events), "codex": codex,
               "notify": str(ROOT / "scripts" / "notify.py")}
+    if coordination:
+        config["coordination"] = str(coordination)
     config_path = directory / "session.json"
     config_path.write_text(json.dumps(config))
     os.chmod(config_path, 0o600)

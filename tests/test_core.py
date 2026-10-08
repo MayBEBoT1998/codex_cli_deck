@@ -54,7 +54,7 @@ class CompletionTests(unittest.TestCase):
             (path / "partial.tmp").write_text("{")
             (path / "broken.json").write_text("{")
             (path / "array.json").write_text("[]")
-            (path / "huge.json").write_text(" " * 70000)
+            (path / "huge.json").write_text(" " * 1_000_001)
             self.assertEqual(drain_events(directory), [])
             self.assertTrue((path / "partial.tmp").exists())
 
