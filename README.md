@@ -6,6 +6,10 @@
 
 **[Ubuntu／WSL 安装与使用](INSTALL.md)**
 
+![Codex Deck：多终端管理、头像完成提醒和二次元桌面宠物](docs/images/workspace.png)
+
+*真实应用窗口，使用示例项目和演示完成提醒。*
+
 ## 功能
 
 - 每个终端单独选择项目目录，后台任务持续运行。
@@ -38,4 +42,6 @@ bash launch.sh --smoke-test artifacts
 
 界面测试需要图形桌面，使用临时终端及测试通知，不调用模型。原始素材不随仓库发布，对原图的可选校验会跳过。
 
-运行资源位于 `assets/`。原始素材、备份、运行状态及截图已加入 `.gitignore`。重新处理素材时，另需安装 `python3-numpy`、`python3-opencv`。
+运行资源位于 `assets/`。原始素材、备份、运行状态及测试截图已加入 `.gitignore`；README 展示图保存在 `docs/images/`。重新处理素材时，另需安装 `python3-numpy`、`python3-opencv`。
+
+在图形桌面运行 `/usr/bin/python3 scripts/capture_readme.py` 可重新生成展示图；使用独立的示例终端，不调用模型或保存个人会话。
