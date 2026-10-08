@@ -1,0 +1,2 @@
+# GTK/VTE/PyGObject are supplied by Homebrew via --system-site-packages.
+psutil>=6.0,<8

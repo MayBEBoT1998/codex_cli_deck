@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Official Codex notify callback: one JSON argument, local event files only."""
 import json
 from pathlib import Path

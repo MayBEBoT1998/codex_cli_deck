@@ -11,7 +11,7 @@ from codex_deck.app import Deck, Gtk
 class DirectoryFlowTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.project = Path(self.temp.name) / "中文 project 'two'"
+        self.project = Path(self.temp.name).resolve() / "中文 project 'two'"
         self.project.mkdir()
         self.deck = SimpleNamespace(
             closing=False, directory_dialog=None, sessions=[],

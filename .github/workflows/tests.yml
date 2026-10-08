@@ -1,0 +1,32 @@
+name: Cross-platform tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ubuntu dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi python3-cairo python3-gi-cairo python3-pil gir1.2-gtk-3.0 gir1.2-vte-2.91 fonts-noto-cjk xvfb
+      - name: macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          bash scripts/setup_macos.sh
+          .venv/bin/python -m pip install Pillow
+      - name: Ubuntu tests and GUI smoke test
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a /usr/bin/python3 -m unittest discover -s tests -v
+          xvfb-run -a bash launch.sh --smoke-test artifacts/ubuntu
+      - name: macOS tests
+        if: runner.os == 'macOS'
+        run: .venv/bin/python -m unittest discover -s tests -v

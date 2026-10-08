@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
-import signal
+import sys
 import time
 import uuid
+
+from .processes import owned_processes, process_cwd, reap_stubborn, stop_processes
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -80,7 +83,8 @@ class Settings:
                        "theme": "night", "motion": True, "avatar_pack": "portraits",
                        "pets_enabled": True, "pet_count": 3,
                        "pet_style": "anime", "pet_character": "all", "pet_height": 144,
-                       "sound": False, "sessions": [], "default_cwd": str(ROOT)}
+                       "sound": False, "sessions": [],
+                       "default_cwd": str(Path.home() if getattr(sys, "frozen", False) else ROOT)}
         try:
             loaded = json.loads(self.path.read_text())
             if isinstance(loaded, dict):
@@ -153,6 +157,26 @@ def drain_events(directory):
     return events
 
 
+def terminal_shell():
+    if sys.platform != "darwin":
+        return "/bin/bash"
+    if getattr(sys, "frozen", False):
+        return str(ROOT / "bin/bash")
+    # Apple's Bash 3.2 redraws wrapped Unicode prompts incorrectly on resize,
+    # overwriting prior output. Use the modern Bash installed with the GUI.
+    brew = shutil.which("brew")
+    candidate = Path(brew).parent / "bash" if brew else None
+    if candidate and candidate.is_file():
+        return str(candidate)
+    raise RuntimeError("未找到 Homebrew Bash；请执行 bash scripts/setup_macos.sh。")
+
+
+def helper_command(name):
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--internal-" + name.replace("_", "-")]
+    return [sys.executable, str(ROOT / "scripts" / f"{name}.py")]
+
+
 def prepare_session(directory, session, codex, auto_codex=False, clean_shell=False):
     """Install an isolated shell wrapper; never edit the user's shell/Codex config."""
     directory = Path(directory)
@@ -167,12 +191,10 @@ def prepare_session(directory, session, codex, auto_codex=False, clean_shell=Fal
     config_path.write_text(json.dumps(config))
     os.chmod(config_path, 0o600)
     wrapper = bin_dir / "codex"
-    # repr is Python literal quoting, shlex.quote below is shell quoting.
-    wrapper.write_text("#!/usr/bin/python3\nimport runpy, sys\n"
-                       f"sys.argv = [{str(ROOT / 'scripts' / 'run_codex.py')!r}, {str(config_path)!r}] + sys.argv[1:]\n"
-                       f"runpy.run_path({str(ROOT / 'scripts' / 'run_codex.py')!r}, run_name='__main__')\n")
+    # A short shell shebang also supports Python/repository paths with spaces.
+    command = shlex.join([*helper_command("run_codex"), str(config_path)])
+    wrapper.write_text(f'#!/bin/sh\nexec {command} "$@"\n')
     wrapper.chmod(0o700)
-    import shlex
     rc = directory / "bashrc"
     source = "" if clean_shell else 'if [ -f "$HOME/.bashrc" ]; then . "$HOME/.bashrc"; fi\n'
     rc.write_text(source + f"export PATH={shlex.quote(str(bin_dir))}:\"$PATH\"\n"
@@ -180,49 +202,13 @@ def prepare_session(directory, session, codex, auto_codex=False, clean_shell=Fal
                   + "export TERM=xterm-256color\n"
                   + "PS1='\\[\\e[38;5;115m\\]❯\\[\\e[0m\\] \\w \\$ '\n"
                   + ("codex\n" if auto_codex and codex else ""))
-    return ["/bin/bash", "--rcfile", str(rc), "-i"]
+    return [terminal_shell(), "--rcfile", str(rc), "-i"]
 
 
-def owned_processes(root_pid):
-    """Snapshot descendants of a known terminal shell, including job process groups."""
-    parents = {}
-    for path in Path("/proc").glob("[0-9]*/stat"):
-        try:
-            raw = path.read_text()
-            fields = raw[raw.rfind(")") + 2:].split()
-            parents[int(path.parent.name)] = int(fields[1])
-        except (OSError, ValueError, IndexError):
-            continue
-    found = {root_pid}
-    while True:
-        children = {pid for pid, parent in parents.items() if parent in found}
-        new = found | children
-        if new == found:
-            return sorted(found - {os.getpid()}, reverse=True)
-        found = new
-
-
-def stop_processes(root_pid):
-    if not root_pid or root_pid <= 1:
-        return []
-    # Capture /proc start times to avoid signalling recycled PIDs later.
-    victims = []
-    for pid in owned_processes(root_pid):
-        try:
-            stat = Path(f"/proc/{pid}/stat").read_text()
-            identity = stat[stat.rfind(")") + 2:].split()[19]
-            victims.append((pid, identity))
-            os.kill(pid, signal.SIGHUP)
-        except (OSError, IndexError):
-            pass
-    return victims
-
-
-def reap_stubborn(victims):
-    for pid, identity in victims:
-        try:
-            stat = Path(f"/proc/{pid}/stat").read_text()
-            if stat[stat.rfind(")") + 2:].split()[19] == identity:
-                os.kill(pid, signal.SIGKILL)
-        except (OSError, IndexError):
-            pass
+def terminal_environment():
+    env = dict(os.environ)
+    # A new terminal is a peer, not a child tool of the session hosting this app.
+    for key in ("CODEX_THREAD_ID", "CODEX_TURN_ID"):
+        env.pop(key, None)
+    env.update(TERM="xterm-256color", COLORTERM="truecolor")
+    return env

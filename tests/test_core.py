@@ -2,6 +2,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shlex
+import sys
 import tempfile
 import unittest
 
@@ -60,7 +62,7 @@ class CompletionTests(unittest.TestCase):
 
     def test_callback_uses_official_payload_and_ignores_other_events(self):
         with tempfile.TemporaryDirectory() as directory:
-            callback = ["/usr/bin/python3", str(ROOT / "scripts" / "notify.py"), directory]
+            callback = [sys.executable, str(ROOT / "scripts" / "notify.py"), directory]
             payload = {"type": "agent-turn-complete", "thread-id": "thread", "turn-id": "turn", "last-assistant-message": "中文完成 " * 1000}
             subprocess.run(callback + [json.dumps(payload)], check=True)
             events = drain_events(directory)
@@ -82,10 +84,13 @@ class WrapperTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="deck test '") as directory:
             path = Path(directory)
             fake = path / "fixture-codex"
-            fake.write_text('''#!/usr/bin/python3
+            fixture = path / "fixture.py"
+            fake.write_text(f'#!/bin/sh\nexec {shlex.join([sys.executable, str(fixture)])} "$@"\n')
+            fixture.write_text('''
 import json, subprocess, sys
 assert sys.argv[1] == '-c'
 callback = json.loads(sys.argv[2].split('=', 1)[1])
+assert callback[0] == sys.executable
 assert sys.argv[3:] == ['resume', '$(touch should-not-exist)', '中文']
 subprocess.run(callback + [json.dumps({'type':'agent-turn-complete', 'turn-id':'fixture', 'last-assistant-message':'完成'})], check=True)
 sys.exit(7)

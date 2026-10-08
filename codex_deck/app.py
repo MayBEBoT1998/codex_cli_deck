@@ -13,6 +13,9 @@ import tempfile
 import time
 from urllib.parse import unquote, urlparse
 
+from .macos import configure_input_method
+configure_input_method()
+
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
@@ -20,7 +23,7 @@ gi.require_version("Vte", "2.91")
 from gi.repository import Gdk, GdkPixbuf, GLib, Gtk, Pango, Vte
 
 from .core import (DEFAULT_AVATAR, ROOT, Session, Settings, drain_events,
-                   prepare_session, reap_stubborn, stop_processes)
+                   prepare_session, process_cwd, reap_stubborn, stop_processes, terminal_environment)
 from .appearance import THEMES, ease_out, layer_geometry, paint_layers, scroll_target
 from .avatars import AvatarLibrary, SUPPORTED_IMAGES
 from .pet_layer import PetLayer
@@ -69,7 +72,7 @@ class Deck(Gtk.Window):
     def __init__(self, args):
         super().__init__(title="Codex Deck")
         self.args = args
-        self.runtime = Path(tempfile.mkdtemp(prefix="codex-deck-"))
+        self.runtime = Path(tempfile.mkdtemp(prefix="codex-deck-")).resolve()
         state_dir = self.runtime / "state" if args.smoke_test else Path(args.state_dir)
         self.settings = Settings(state_dir / "settings.json")
         self.avatar_library = AvatarLibrary(state_dir)
@@ -310,7 +313,8 @@ class Deck(Gtk.Window):
         footer = box()
         footer.set_margin_top(17)
         footer.pack_start(label("●  独立终端 · 后台持续运行", "muted"), True, True, 0)
-        footer.pack_end(label("新建  Ctrl ⇧ T     切换  Ctrl ↑ / ↓", "muted"), False, False, 0)
+        shortcut_hint = "新建  ⌘T     切换  ⌘[ / ]" if sys.platform == "darwin" else "新建  Ctrl ⇧ T     切换  Ctrl ↑ / ↓"
+        footer.pack_end(label(shortcut_hint, "muted"), False, False, 0)
         main.pack_end(footer, False, False, 0)
 
     def pet_layout(self):
@@ -471,11 +475,7 @@ class Deck(Gtk.Window):
         auto = self.settings.values["auto_codex"] and not (self.args.shell or self.args.demo or self.args.smoke_test)
         argv = prepare_session(self.runtime / session.id, session, self.codex, auto,
                                clean_shell=bool(self.args.smoke_test or self.args.demo))
-        env = dict(os.environ)
-        # A new terminal is a peer, not a child tool of the session hosting this app.
-        for key in ("CODEX_THREAD_ID", "CODEX_TURN_ID"):
-            env.pop(key, None)
-        env.update(TERM="xterm-256color", COLORTERM="truecolor")
+        env = terminal_environment()
         terminal.spawn_async(Vte.PtyFlags.DEFAULT, session.cwd, argv,
                              [f"{k}={v}" for k, v in env.items()], GLib.SpawnFlags.DEFAULT,
                              None, None, -1, None, self.spawned, session.id)
@@ -499,6 +499,10 @@ class Deck(Gtk.Window):
             terminal.feed(f"\r\n无法启动终端：{error}\r\n".encode())
         else:
             self.pids[session_id] = pid
+            if sys.platform == "darwin":
+                # Darwin rejects the initial ioctl before the slave PTY opens.
+                # Hidden tabs may never receive another allocation/resize event.
+                terminal.get_pty().set_size(terminal.get_row_count(), terminal.get_column_count())
         self.refresh()
 
     def make_card(self, session):
@@ -617,13 +621,10 @@ class Deck(Gtk.Window):
         for session in self.sessions:
             pid = self.pids.get(session.id)
             if pid:
-                try:
-                    cwd = os.readlink(f"/proc/{pid}/cwd")
-                    if cwd != session.cwd and Path(cwd).is_dir():
-                        session.cwd = cwd
-                        changed = True
-                except OSError:
-                    pass
+                cwd = process_cwd(pid)
+                if cwd and cwd != session.cwd and Path(cwd).is_dir():
+                    session.cwd = cwd
+                    changed = True
             for event in drain_events(self.runtime / session.id / "events"):
                 completed = session.apply(event)
                 changed = True
@@ -1011,6 +1012,7 @@ class Deck(Gtk.Window):
 
     def help_dialog(self):
         self.message("Codex Deck · 使用说明",
+                     ("macOS：⌘T / W 新建 / 关闭，⌘C / V 复制 / 粘贴\n⌘1…9 切换终端，⌘[ / ] 前后切换，⌘+ / − 调整字号\n\n" if sys.platform == "darwin" else "") +
                      "＋ / Ctrl+Shift+T    选择目录并新建终端\nCtrl+↑ / Ctrl+↓    上一个 / 下一个终端（循环切换）\nAlt+1…9    切换到对应终端\nCtrl+Tab / Ctrl+Shift+Tab    前后切换\nCtrl+Shift+C / V    复制 / 粘贴\nCtrl+Shift+W    关闭当前终端\nCtrl+加号 / 减号    调整字号\n\n"
                      "右键角色标签可重命名或更换头像。\n完成后角色会放大闪烁；点击该标签即可确认。\n\n"
                      "本地 codex 命令自动接入完成提醒。\nSSH 远端 Codex 不会自动接入本地通知。\n关闭页面不会保留进程；切换标签会继续运行。".replace("关闭页面", "关闭应用"))
@@ -1073,14 +1075,17 @@ class Deck(Gtk.Window):
         alt = bool(event.state & Gdk.ModifierType.MOD1_MASK)
         system_modifier = bool(event.state & (Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.HYPER_MASK
                                              | Gdk.ModifierType.META_MASK | Gdk.ModifierType.MOD4_MASK))
+        # Quartz exposes Command as MOD2, sometimes also the virtual META bit.
+        command = sys.platform == "darwin" and bool(event.state & (
+            Gdk.ModifierType.MOD2_MASK | Gdk.ModifierType.META_MASK)) and not ctrl and not alt
         key = Gdk.keyval_name(event.keyval) or ""
         terminal = self.views.get(self.active_id)
-        if ctrl and shift and key.lower() == "t":
+        if (ctrl and shift or command) and key.lower() == "t":
             self.choose_directory()
-        elif ctrl and shift and key.lower() == "w":
+        elif (ctrl and shift or command) and key.lower() == "w":
             if self.active_id:
                 self.close_session(self.active_id)
-        elif ctrl and shift and key.lower() in ("c", "v") and terminal:
+        elif (ctrl and shift or command) and key.lower() in ("c", "v") and terminal:
             terminal.copy_clipboard_format(Vte.Format.TEXT) if key.lower() == "c" else terminal.paste_clipboard()
         elif (ctrl and not shift and not alt and not system_modifier
               and key in ("Up", "Down", "KP_Up", "KP_Down") and self.sessions):
@@ -1091,9 +1096,13 @@ class Deck(Gtk.Window):
             index = next((i for i, s in enumerate(self.sessions) if s.id == self.active_id), 0)
             direction = -1 if shift else 1
             self.activate(self.sessions[(index + direction) % len(self.sessions)].id, direction)
-        elif alt and key in "123456789" and len(key) == 1 and int(key) <= len(self.sessions):
+        elif command and key in ("bracketleft", "bracketright") and self.sessions:
+            index = next((i for i, s in enumerate(self.sessions) if s.id == self.active_id), 0)
+            direction = -1 if key == "bracketleft" else 1
+            self.activate(self.sessions[(index + direction) % len(self.sessions)].id, direction)
+        elif (alt or command) and key in "123456789" and len(key) == 1 and int(key) <= len(self.sessions):
             self.activate(self.sessions[int(key) - 1].id)
-        elif ctrl and key in ("plus", "equal", "KP_Add", "minus", "KP_Subtract"):
+        elif (ctrl or command) and key in ("plus", "equal", "KP_Add", "minus", "KP_Subtract"):
             self.set_font(self.font_size + (-1 if key in ("minus", "KP_Subtract") else 1))
         else:
             return False
@@ -1147,13 +1156,15 @@ def main():
     parser.add_argument("--restore", action="store_true", help="在各自目录重新打开上次的终端列表")
     parser.add_argument("--shell", action="store_true", help="新终端仅打开 shell，不自动启动 Codex")
     parser.add_argument("--demo", action="store_true", help="用真实 shell 展示四个角色及标注的演示提醒")
-    parser.add_argument("--state-dir", default=str(ROOT / ".state"), help="设置保存目录")
+    state_dir = (Path.home() / "Library/Application Support/Codex Deck"
+                 if sys.platform == "darwin" and getattr(sys, "frozen", False) else ROOT / ".state")
+    parser.add_argument("--state-dir", default=str(state_dir), help="设置保存目录")
     parser.add_argument("--smoke-test", metavar="OUTPUT_DIR", help="运行隔离的 GUI 集成测试并保存截图/结果")
     args = parser.parse_args()
     if args.cwd and not Path(args.cwd).expanduser().is_dir():
         parser.error("--cwd 必须是存在的目录")
     if not Gtk.init_check()[0]:
-        print("无法连接桌面显示。请在 Linux 图形桌面的终端中运行 ./launch.sh。", file=sys.stderr)
+        print("无法连接桌面显示。请在 macOS 或 Linux 图形桌面的终端中运行 bash launch.sh。", file=sys.stderr)
         sys.exit(1)
     window = Deck(args)
     for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):

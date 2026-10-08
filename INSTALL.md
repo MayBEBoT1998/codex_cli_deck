@@ -16,6 +16,65 @@ bash launch.sh
 
 已有项目文件可跳过克隆，直接进入项目目录启动。必须保留整个 `assets` 文件夹。
 
+## macOS
+
+需要已登录的 macOS 图形桌面、[Homebrew](https://brew.sh) 和本机可用的 Codex CLI。在终端里先确认 `codex --version` 能运行。
+
+首次下载请选择 `mac` 分支：
+
+```bash
+git clone --branch mac https://github.com/MayBEBoT1998/codex_cli_deck.git
+cd codex_cli_deck
+```
+
+进入项目目录执行：
+
+```bash
+bash scripts/setup_macos.sh
+bash launch.sh
+```
+
+安装脚本通过 Homebrew 安装 Python 3、PyGObject、GTK 3、VTE、SVG 支持和新版 Bash，再创建能访问 Homebrew 图形库的 `.venv`，将 macOS 专用的 `psutil` 安装到其中。无需改动系统 Python，也不需要 XQuartz。
+
+macOS 与 Ubuntu 共用同一套界面、终端、通知、头像和宠物功能。Mac 使用 `psutil` 跟踪目录及结束会话进程，Ubuntu 继续使用 `/proc`，无需安装 `psutil`。两边的内嵌终端均使用 Bash，并继承启动 Deck 时的 `PATH`；不会读取 `.zshrc`，也不会修改用户的 Shell 或 Codex 配置。从能运行 Codex 的终端启动 Deck 即可。
+
+Mac 使用 Homebrew Bash，避免系统 Bash 3.2 在长中文路径提示符换行、窗口缩放时重绘错位；Ubuntu 仍使用 `/bin/bash`。
+
+支持 Homebrew 的 Apple Silicon／Intel 路径自动识别；本机验证环境为 Apple Silicon，Intel Mac 尚未实测。
+
+排查依赖问题：
+
+```bash
+bash launch.sh --check-deps
+```
+
+若提示找不到 `gi`、`cairo` 或 `psutil`，或升级 Homebrew Python 后无法启动，请重新执行 `bash scripts/setup_macos.sh`。不要用 macOS 的 `/usr/bin/python3` 启动。已有完整依赖环境时，可用 `CODEX_DECK_PYTHON=/绝对路径/python bash launch.sh` 指定解释器；不要将不同系统或架构的 `.venv` 互相复制。
+
+### 中文输入法
+
+macOS 启动时显式加载 GTK 的 `quartz` 原生输入法和 Homebrew 输入法缓存，支持系统拼音输入。修改后需重新打开 Deck，新设置才会生效。切换到系统拼音输入法后，在终端正常拼写、选词、按空格上屏即可；Linux 输入法配置不变。
+
+### 打包 macOS 应用
+
+先完成上面的依赖安装，然后执行：
+
+```bash
+.venv/bin/python -m pip install -r requirements-macos-build.txt
+.venv/bin/python scripts/build_macos.py
+```
+
+输出为 `dist/Codex Deck.app`，可以双击运行、拖入“应用程序”或固定到 Dock。该应用包含 Python、GTK/VTE、Bash、图片资源和 Quartz 输入法模块，运行时不依赖项目目录或 `.venv`；Codex CLI 需单独安装并登录。输入法缓存在运行时生成，移动或重命名应用后仍可加载。
+
+应用版设置及导入头像保存在 `~/Library/Application Support/Codex Deck`，源码版仍使用项目内的 `.state`。Finder 启动时会补齐常用命令路径及打包机器的 `PATH`，不会把登录信息或 API 密钥放进应用。
+
+打包产物仅支持构建机器的架构。当前本机产物为 Apple Silicon；Intel 版本需在 Intel Mac 上重新打包。构建工具做本地 ad-hoc 签名，未做 Developer ID 签名或 Apple 公证，适合本机使用；向其他 Mac 分发时需要另行签名、公证。
+
+应用版验证（不调用模型）：
+
+```bash
+"dist/Codex Deck.app/Contents/MacOS/Codex Deck" --smoke-test artifacts/macos-app
+```
+
 ## Windows WSL
 
 需要 Windows 11 或 Windows 10 19044+，使用 **WSL2＋WSLg**。
@@ -65,5 +124,17 @@ bash launch.sh --restore    # 按上次目录重新打开终端
 | Ctrl+Shift+T / W | 新建 / 关闭终端 |
 | Ctrl+Shift+C / V | 复制 / 粘贴 |
 | Ctrl+加号 / 减号 | 调整字号 |
+
+macOS 同时保留上述快捷键，并支持：
+
+| 快捷键 | 功能 |
+| --- | --- |
+| ⌘T / ⌘W | 新建 / 关闭终端 |
+| ⌘C / ⌘V | 复制 / 粘贴 |
+| ⌘1～9 | 切换对应终端 |
+| ⌘[ / ⌘] | 上一个 / 下一个终端 |
+| ⌘加号 / 减号 | 调整字号 |
+
+`Ctrl+C` 始终传给终端，用于中断程序。macOS 的 `Ctrl+↑/↓` 可能由系统的 Mission Control 占用，可使用 `⌘[/]`。
 
 提示：完成提醒适用于工作台内启动的本机 Codex，SSH 远端 Codex 不会自动接入。

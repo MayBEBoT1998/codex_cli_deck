@@ -10,7 +10,7 @@ from codex_deck.core import Settings
 class AvatarPackTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.sources = self.root / "source images"
         self.sources.mkdir()
         self.library = AvatarLibrary(self.root / "state")
