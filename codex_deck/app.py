@@ -201,7 +201,7 @@ class Deck(Gtk.Window):
         header.pack_end(self.settings_button)
         self.theme_button = button("☀  日间", self.toggle_theme)
         header.pack_end(self.theme_button)
-        header.pack_end(button("⇄  Agent 协作", self.open_coordination, tooltip="选择任意发起者及它能控制的 Agent"))
+        header.pack_end(button("⇄  Agent 协作", self.open_coordination, tooltip="拖动 Agent 卡片建立协同关系"))
         root = box()
         self.workspace_overlay = Gtk.Overlay()
         self.workspace_overlay.add(root)
@@ -733,7 +733,7 @@ class Deck(Gtk.Window):
     def session_menu(self, session_id, event):
         menu = Gtk.Menu()
         for text, callback in [("重命名…", lambda: self.rename(session_id)),
-                               ("配置此 Agent 的控制范围…", lambda: self.open_coordination(session_id)),
+                               ("管理此 Agent 的协同关系…", lambda: self.open_coordination(session_id)),
                                ("更换角色…", lambda: self.choose_avatar(session_id)),
                                ("在指定目录新建…", self.choose_directory),
                                ("关闭终端", lambda: self.close_session(session_id))]:

@@ -9,8 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from codex_deck.app import Deck, Gdk, GLib, Gtk
+from codex_deck.app import Deck, GLib, Gtk
 from codex_deck.core import ROOT
+from codex_deck.screenshot import save_widget_png
 
 
 class ReadmeDeck(Deck):
@@ -77,12 +78,7 @@ class ReadmeDeck(Deck):
         if self.closing:
             return False
         try:
-            window = self.get_window()
-            pixbuf = Gdk.pixbuf_get_from_window(window, 0, 0, window.get_width(), window.get_height())
-            if pixbuf is None:
-                raise RuntimeError("无法读取窗口图像")
-            self.output.parent.mkdir(parents=True, exist_ok=True)
-            pixbuf.savev(str(self.output), "png", [], [])
+            save_widget_png(self, self.output)
             self.captured = True
             print("已保存 README 截图。", flush=True)
         except Exception as error:

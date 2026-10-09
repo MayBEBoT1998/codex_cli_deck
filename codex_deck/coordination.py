@@ -128,7 +128,7 @@ class Coordinator:
 
     def dispatch(self, source, target, prompt, request_key, deliver=True):
         if source not in self.agents or target not in self.grants.get(source, set()):
-            raise ValueError("没有控制这个 Agent 的权限，请在协作面板中勾选")
+            raise ValueError("没有控制这个 Agent 的权限，请先在协作面板中建立关系")
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 12000:
             raise ValueError("任务内容需要为 1–12000 个字符")
         if not isinstance(request_key, str) or not 1 <= len(request_key) <= 100:
@@ -239,7 +239,7 @@ class Coordinator:
             return
         if kind == "agent-starting":
             if agent.epoch:
-                self.invalidate(agent, "目标 Codex 已重启；请重新勾选控制范围")
+                self.invalidate(agent, "目标 Codex 已重启；请重新建立协作关系")
             agent.epoch, agent.thread, agent.turn, agent.state = event["epoch"], "", "", "connecting"
             agent.error = ""
             agent.tools_ready = False
@@ -255,7 +255,7 @@ class Coordinator:
             agent.tools_ready = True
         elif kind == "agent-bound":
             if agent.thread and agent.thread != event["thread_id"]:
-                self.invalidate(agent, "目标 Codex 已切换会话，请重新勾选")
+                self.invalidate(agent, "目标 Codex 已切换会话，请重新建立协作关系")
             agent.thread = event["thread_id"]
             agent.error = ""
             agent.state = (event.get("status") or {}).get("type", "idle")

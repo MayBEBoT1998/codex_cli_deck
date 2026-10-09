@@ -9,6 +9,7 @@ import time
 from gi.repository import Gdk, GLib, Gtk
 from .core import ROOT
 from .appearance import layer_geometry
+from .screenshot import save_widget_png
 
 
 class SmokeCheck:
@@ -74,10 +75,7 @@ class SmokeCheck:
         return False
 
     def screenshot(self, name):
-        window = self.app.get_window()
-        width, height = window.get_width(), window.get_height()
-        pixbuf = Gdk.pixbuf_get_from_window(window, 0, 0, width, height)
-        pixbuf.savev(str(self.output / name), "png", [], [])
+        save_widget_png(self.app, self.output / name)
 
     def step(self):
         try:

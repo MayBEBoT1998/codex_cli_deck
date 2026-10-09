@@ -19,11 +19,11 @@ button:focus { border-color: #2c816d; }
 .session-card.pulse-high { background: #b9ddbf; border-color: #467e50; }
 .unread .session-status { color: #275b34; }
 .sidebar-bottom, .setting-row { border-color: #c4d0da; }
-.terminal-panel { background: #f8fafc; border-color: #aabdcf; }
+.terminal-panel { background: #141b24; border-color: #aabdcf; }
 .terminal-toolbar { background: #e4ecf4; border-bottom-color: #bbcbd9; }
 .terminal-mode { color: #355775; }
 .terminal-mode-box { background: #d1dfe9; }
-.terminal-bottom { border-color: #d0dbe5; color: #52697d; }
+.terminal-bottom { background: #e4ecf4; border-color: #c5d2de; color: #40566b; border-radius: 0 0 9px 9px; }
 .notice { background: #d6ebdf; border-color: #85b59b; color: #225337; }
 .empty-title { color: #284e40; }
 .danger { color: #a82f38; }
@@ -38,6 +38,29 @@ scrollbar slider { background: #98abbe; }
 scrollbar slider:hover { background: #6a849d; }
 selection { background: #b6dbd2; color: #153d33; }
 separator { background: #c4d0da; }
+.collab-title { color: #172f43; }
+.collab-description { color: #415b70; }
+.collab-section { color: #243f53; }
+.collab-caption { color: #50677a; }
+.collab-count { color: #205e4d; background: #d0e9df; }
+.collab-agent { background: #f6f9fc; border-color: #b6c7d5; }
+.collab-agent:hover { background: #e5eef5; border-color: #779caf; }
+.collab-agent.selected { background: #d9eee5; border-color: #40816b; }
+.collab-agent.drop-target, .collab-agent:drop(active) { background: #bce2d2; border-color: #24664f; }
+.collab-agent-name { color: #20394d; }
+.collab-agent-status { color: #385a6b; }
+.collab-grip { color: #576f82; }
+.collab-canvas { background: #f5f8fb; border-color: #b9cbd8; }
+.collab-relation { background: #e9f0f6; border-color: #b8cad7; }
+.collab-relation.selected { background: #dcefe5; border-color: #83b29d; }
+.collab-endpoint:hover { background: #cce2df; }
+.collab-arrow { color: #256c53; }
+.collab-remove { color: #536979; }
+.collab-remove:hover { background: #f1d4d6; color: #9d2635; }
+.collab-connect { background: #e1ebf3; border-color: #b3c6d5; }
+.collaboration-window combobox button { color: #203a50; background: #f8fafc; border-color: #a3b9ca; }
+.collab-feedback { color: #245d48; }
+.collab-empty-icon { color: #39856a; }
 .directory-chooser { background: #edf2f6; color: #243345; }
 .directory-chooser filechooser,
 .directory-chooser filechooser box,

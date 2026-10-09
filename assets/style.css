@@ -53,6 +53,32 @@ scrollbar slider:hover { background: #617285; }
 selection { background: #436158; color: #f1f5f4; }
 separator { background: #333b46; min-height: 1px; }
 
+/* Collaboration shows directed relationships; cards are drag sources/targets. */
+.collab-title { font-size: 21px; font-weight: 700; color: #edf3f8; }
+.collab-description { color: #b1beca; font-size: 12px; }
+.collab-section { color: #dce8ef; font-size: 13px; font-weight: 600; }
+.collab-caption { color: #9dabb9; font-size: 11px; }
+.collab-count { color: #b9d5cb; background: #253b35; border-radius: 14px; padding: 6px 11px; font-size: 11px; }
+.collab-agent { background: #202933; border: 1px solid #374654; border-radius: 12px; padding: 14px 12px; }
+.collab-agent:hover { background: #293542; border-color: #6e8993; }
+.collab-agent.selected { background: #263b38; border-color: #72b59f; }
+.collab-agent.drop-target, .collab-agent:drop(active) { background: #365a4e; border-color: #b4efd7; }
+.collab-agent-name { color: #e6edf4; font-weight: 600; font-size: 12px; }
+.collab-agent-status { color: #acc4ce; font-size: 11px; }
+.collab-grip { color: #8296a6; font-size: 20px; }
+.collab-canvas { background: #11171f; border: 1px solid #303e4a; border-radius: 12px; padding: 10px; }
+.collab-relation { background: #202b36; border: 1px solid #354653; border-radius: 10px; padding: 6px; }
+.collab-relation.selected { background: #213932; border-color: #4f8574; }
+.collab-endpoint { padding: 8px 5px; }
+.collab-endpoint:hover { background: #354852; }
+.collab-arrow { color: #9adcc4; font-size: 23px; }
+.collab-remove { color: #b9c7d2; padding: 4px 7px; font-size: 20px; }
+.collab-remove:hover { background: #543039; color: #ffd1d1; }
+.collab-connect { background: #1c2631; border: 1px solid #344452; border-radius: 12px; padding: 12px 14px; }
+.collaboration-window combobox button { color: #e2ebf1; background: #263441; border-color: #486071; }
+.collab-feedback { color: #b5e6d3; font-size: 12px; }
+.collab-empty-icon { color: #87cdb3; font-size: 45px; }
+
 /* Native folder chooser: explicit surfaces prevent mixed light/dark system themes. */
 .directory-chooser { background: #1b222c; color: #edf2f7; }
 .directory-chooser filechooser,

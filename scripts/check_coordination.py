@@ -15,8 +15,9 @@ import time
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from codex_deck.app import Deck, Gdk, GLib, Gtk
+from codex_deck.app import Deck, GLib, Gtk
 from codex_deck.core import ROOT
+from codex_deck.screenshot import save_widget_png
 
 
 class CheckDeck(Deck):
@@ -111,10 +112,7 @@ class CheckDeck(Deck):
                 self.open_coordination(self.a.id)
                 self.stage = 4
             elif self.stage == 4:
-                panel = self.coordination_panel
-                window = panel.get_window()
-                image = Gdk.pixbuf_get_from_window(window, 0, 0, window.get_width(), window.get_height())
-                image.savev(str(self.output / "coordination-panel.png"), "png", [], [])
+                save_widget_png(self.coordination_panel, self.output / "coordination-panel.png")
                 self.finish()
                 return False
         except Exception as error:

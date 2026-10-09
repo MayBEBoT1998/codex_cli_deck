@@ -10,7 +10,7 @@ from codex_deck.core import emit_event
 
 
 TOOLS = [
-    {"name": "list_workers", "description": "列出用户在 Codex Deck 中允许当前 Agent 调度的其他终端，先查询再派发。",
+    {"name": "list_workers", "description": "列出用户在 Codex Deck 中为当前 Agent 建立协作关系、允许调度的其他终端，先查询再派发。",
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "dispatch_task", "description": "向一个授权 Agent 的当前 Codex 会话派发任务；忙碌时排队，完成后自动回传。每个逻辑任务使用唯一 request_id，重试相同任务必须沿用它。",
      "inputSchema": {"type": "object", "properties": {"agent_id": {"type": "string"}, "prompt": {"type": "string"}, "request_id": {"type": "string"}}, "required": ["agent_id", "prompt", "request_id"]}},
@@ -38,7 +38,7 @@ def serve(config_path, epoch=""):
             if method == "initialize":
                 result = {"protocolVersion": message.get("params", {}).get("protocolVersion", "2024-11-05"),
                           "capabilities": {"tools": {}}, "serverInfo": {"name": "codex-deck", "version": "1.1.0"},
-                          "instructions": "你可以通过 Deck 工具调度用户勾选的其他 Agent。任意 Agent 都可发起；范围由用户在工作台界面设置。先 list_workers。派发后可结束当前响应，工作台会把结果作为后续消息回传；不要反复轮询或重复派发。"}
+                          "instructions": "你可以通过 Deck 工具调度用户已建立协作关系的其他 Agent。任意 Agent 都可发起；范围由用户在工作台界面设置。先 list_workers。派发后可结束当前响应，工作台会把结果作为后续消息回传；不要反复轮询或重复派发。"}
             elif method == "ping":
                 result = {}
             elif method == "tools/list":

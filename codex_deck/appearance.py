@@ -12,10 +12,13 @@ THEMES = {
         "layer_border": (0.32, 0.39, 0.46),
     },
     "day": {
-        "foreground": "#243345", "background": "#f8fafc",
-        "cursor": "#186653", "selection": "#c9e5de",
-        "palette": ["#243345", "#a62a37", "#246437", "#775006", "#245aa6", "#794499", "#116675", "#596777",
-                    "#677487", "#b52f3d", "#2e7040", "#865b08", "#2865b5", "#8b449c", "#0a6c7f", "#364658"],
+        # Codex paints parts of its TUI with fixed RGB colors and may cache its
+        # background detection. Keep VTE dark in light chrome so switching a
+        # running session cannot turn its composer into dark-on-dark text.
+        "foreground": "#e1eaf3", "background": "#141b24",
+        "cursor": "#b5ead5", "selection": "#365b52",
+        "palette": ["#273442", "#efa3a8", "#a8deb6", "#eed3a1", "#a5c8f5", "#d3baf0", "#a0ddd1", "#dbe4ed",
+                    "#9cabb9", "#ffb6bc", "#c2eac3", "#ffe1ad", "#bfdaff", "#e3cdf9", "#c0f0e5", "#f5f8fc"],
         "layer_back": (0.78, 0.83, 0.88), "layer_front": (0.89, 0.93, 0.96),
         "layer_border": (0.51, 0.60, 0.68),
     },
