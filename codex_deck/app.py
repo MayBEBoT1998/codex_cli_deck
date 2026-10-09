@@ -1167,6 +1167,8 @@ class Deck(Gtk.Window):
 
 
 def main():
+    GLib.set_prgname("codex-deck")
+    GLib.set_application_name("Codex Deck")
     parser = argparse.ArgumentParser(description="Codex Deck — 左侧角色标签、多终端与 Codex 完成提醒")
     parser.add_argument("--cwd", help="直接在指定目录打开首个终端；省略则先选择目录")
     parser.add_argument("--restore", action="store_true", help="在各自目录重新打开上次的终端列表")
@@ -1178,7 +1180,7 @@ def main():
     if args.cwd and not Path(args.cwd).expanduser().is_dir():
         parser.error("--cwd 必须是存在的目录")
     if not Gtk.init_check()[0]:
-        print("无法连接桌面显示。请在 Linux 图形桌面的终端中运行 ./launch.sh。", file=sys.stderr)
+        print("无法连接桌面显示。请在 Ubuntu 图形桌面或 WSLg 中运行 codex-deck（源码版用 bash launch.sh）。", file=sys.stderr)
         sys.exit(1)
     window = Deck(args)
     for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):

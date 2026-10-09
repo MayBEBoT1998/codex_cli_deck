@@ -16,6 +16,27 @@ bash launch.sh
 
 已有项目文件可跳过克隆，直接进入项目目录启动。必须保留整个 `assets` 文件夹。
 
+### 安装为桌面程序和全局命令
+
+在源码目录执行一次，无需 `sudo`：
+
+```bash
+bash install.sh
+```
+
+之后在 Ubuntu 应用菜单搜索 **Codex Deck**，或在任意目录运行：
+
+```bash
+codex-deck                 # 打开目录选择窗口
+codex-deck --cwd .         # 直接打开当前项目
+codex-deck --restore       # 恢复上次的终端列表
+codex-deck --shell         # 仅打开普通终端
+```
+
+首次提示找不到命令时，重新登录，或执行 `export PATH="$HOME/.local/bin:$PATH"`。
+
+程序安装到 `~/.local/share/codex-deck`，不再依赖源码目录。首次安装复制现有设置和自定义头像到 `~/.local/state/codex-deck`（支持 `XDG_STATE_HOME`），更新时保留。更新源码后再次运行 `bash install.sh`；卸载运行 `codex-deck --uninstall`，设置和头像仍保留。
+
 ## Windows WSL
 
 需要 Windows 11 或 Windows 10 19044+，使用 **WSL2＋WSLg**。
@@ -29,6 +50,8 @@ wsl --install -d Ubuntu
 已有 WSL：用 `wsl -l -v` 确认 Ubuntu 的 VERSION 为 2；必要时执行 `wsl --update`。
 
 之后在 **WSL 的 Ubuntu 终端**执行上面的 Ubuntu 安装步骤。Codex 也安装在 WSL 内；应用窗口显示在 Windows 桌面。
+
+同样可运行 `bash install.sh`，之后在 WSL 终端的任意目录使用 `codex-deck`。
 
 WSL 方案尚未实测。图形环境要求见 [微软说明](https://learn.microsoft.com/zh-cn/windows/wsl/tutorials/gui-apps)。
 

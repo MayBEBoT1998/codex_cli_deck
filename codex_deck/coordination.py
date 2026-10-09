@@ -311,9 +311,11 @@ class Coordinator:
         if error:
             message = str(error.get("message", error)) if isinstance(error, dict) else str(error)
             if purpose == "start":
-                self.finish(task, "failed", error=message)
+                uncertain = isinstance(error, dict) and error.get("outcomeUnknown")
+                self.finish(task, "unknown" if uncertain else "failed", error=message)
             elif purpose == "deliver":
-                task.delivery_status = "failed: " + message[:400]
+                uncertain = isinstance(error, dict) and error.get("outcomeUnknown")
+                task.delivery_status = "unknown" if uncertain else "failed: " + message[:400]
             else:
                 task.status, task.error = "running", "取消失败：" + message
             return

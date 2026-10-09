@@ -107,7 +107,7 @@ class Settings:
                        "theme": "night", "motion": True, "avatar_pack": "portraits",
                        "pets_enabled": True, "pet_count": 3,
                        "pet_style": "anime", "pet_character": "all", "pet_height": 144,
-                       "sound": False, "sessions": [], "default_cwd": str(ROOT)}
+                       "sound": False, "sessions": [], "default_cwd": str(Path.home())}
         try:
             loaded = json.loads(self.path.read_text())
             if isinstance(loaded, dict):
@@ -121,7 +121,7 @@ class Settings:
         if not isinstance(self.values["sessions"], list):
             self.values["sessions"] = []
         if not isinstance(self.values["default_cwd"], str):
-            self.values["default_cwd"] = str(ROOT)
+            self.values["default_cwd"] = str(Path.home())
         if self.values["theme"] not in ("day", "night"):
             self.values["theme"] = "night"
         if not isinstance(self.values["avatar_pack"], str) or self.values["avatar_pack"] in ("auto", "builtin", "miku"):

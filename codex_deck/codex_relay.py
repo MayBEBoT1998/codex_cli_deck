@@ -1,4 +1,4 @@
-"""One native Codex TUI ↔ one app-server, with a scoped collaboration side channel.
+"""Native Codex TUI and auxiliary clients ↔ one app-server, with a scoped collaboration side channel.
 
 The TUI owns its normal requests, approvals and terminal UI. Deck only starts
 turns and interrupts the exact turns it owns; every notification still reaches
@@ -8,22 +8,74 @@ import json
 import copy
 import os
 from pathlib import Path
-import selectors
 import socket
 import signal
 import subprocess
-import threading
 import time
 import uuid
 
 from .core import ROOT, emit_event
-from .ipc import read_json
-from .local_websocket import Decoder, accept_handshake, encode_frame
+from .relay_transport import LocalRelay
+
+
+_VALUE_OPTIONS = {"-c", "--config", "-m", "--model", "-p", "--profile", "-C", "--cd",
+                  "-s", "--sandbox", "-a", "--ask-for-approval", "--enable", "--disable",
+                  "--add-dir", "-i", "--image", "--local-provider", "--remote-auth-token-env"}
+
+
+def _history_options(args):
+    """Read directory/all flags without interpreting prompts or option values."""
+    directory, all_projects = None, False
+    arguments = iter(args)
+    for argument in arguments:
+        if argument == "--":
+            break
+        if argument in ("-C", "--cd"):
+            directory = next(arguments, None)
+        elif argument.startswith("--cd="):
+            directory = argument.partition("=")[2]
+        elif argument.startswith("-C") and len(argument) > 2:
+            directory = argument[2:].removeprefix("=")
+        elif argument == "--all":
+            all_projects = True
+        elif argument in _VALUE_OPTIONS:
+            next(arguments, None)
+    return directory, all_projects
+
+
+class HistoryScope:
+    """History scope shared by the main TUI and all its temporary pickers.
+
+    Remote TUIs can request an unscoped list even with --cd. Apply the
+    directory on thread/list itself, before server-side search/pagination.
+    This is a browsing default, not an access-control boundary: explicit cwd
+    filters and launching with resume --all still work.
+    """
+    def __init__(self, user_args, cwd):
+        directory, self.all_projects = _history_options(user_args)
+        path = Path(directory).expanduser() if directory is not None else Path(cwd)
+        if not path.is_absolute():
+            path = Path(cwd) / path
+        self.cwd = str(path.resolve())
+
+    def observe(self, event):
+        # Only the hub's active binding may change the shared directory.
+        # Reading an unrelated history item must not change this scope.
+        if event.get("type") == "agent-bound" and event.get("cwd"):
+            self.cwd = event["cwd"]
+
+    def apply(self, message):
+        if message.get("method") == "thread/list" and not self.all_projects:
+            params = message.get("params") or {}
+            message["params"] = params
+            if not params.get("cwd"):
+                params["cwd"] = self.cwd
 
 
 class Router:
-    def __init__(self, emit):
+    def __init__(self, emit, history_scope=None):
         self.emit = emit
+        self.history_scope = history_scope
         self.pending = {}
         self.thread = None
         self.ready = False
@@ -31,6 +83,8 @@ class Router:
 
     def from_ui(self, message):
         message = copy.deepcopy(message)
+        if self.history_scope is not None:
+            self.history_scope.apply(message)
         if message.get("method") == "initialize":
             params = message.setdefault("params", {})
             capabilities = params.get("capabilities") or {}
@@ -119,23 +173,39 @@ def supports_managed(args):
     return True
 
 
+def managed_tui_args(user_args, cwd):
+    """Our remote endpoint is local: give the native TUI its actual project cwd.
+
+    This controls the working root; HistoryScope separately scopes history RPCs.
+    Keep an explicit user -C/--cd intact.
+    """
+    directory, _ = _history_options(user_args)
+    if directory is not None:
+        return list(user_args)
+    return ["--cd", str(cwd), *user_args]
+
+
 def run_managed(config, user_args, callback):
     directory = Path(config["events"]).parent
     epoch = uuid.uuid4().hex
     channel = directory / "control"
     channel.mkdir(mode=0o700, exist_ok=True)
     socket_path = directory / "tui.sock"
+    backend_path = directory / "backend.sock"
     socket_path.unlink(missing_ok=True)
+    backend_path.unlink(missing_ok=True)
     server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
         server_socket.bind(str(socket_path))
         os.chmod(socket_path, 0o600)
-        server_socket.listen(1)
-        server_socket.settimeout(.2)
+        server_socket.listen(16)
     except OSError:
         server_socket.close()
         raise
-    emit = lambda event: emit_event(config["events"], dict(event, epoch=epoch))
+    history_scope = HistoryScope(user_args, Path.cwd())
+    def emit(event):
+        history_scope.observe(event)
+        emit_event(config["events"], dict(event, epoch=epoch))
     emit({"type": "agent-starting"})
     options = ["-c", "notify=" + json.dumps(callback, ensure_ascii=False)]
     mcp = {"command": "/usr/bin/python3",
@@ -145,7 +215,7 @@ def run_managed(config, user_args, callback):
         options += ["-c", f"mcp_servers.deck.{key}=" + json.dumps(value, ensure_ascii=False)]
     server = None
     tui = None
-    stop = threading.Event()
+    relay = None
     old_handlers = {}
     def end_session(signum, _frame):
         raise SystemExit(128 + signum)
@@ -153,110 +223,34 @@ def run_managed(config, user_args, callback):
         old_handlers[signum] = signal.signal(signum, end_session)
     try:
         with (directory / "app-server.log").open("w") as log:
-            server = subprocess.Popen([config["codex"], *options, "app-server", "--listen", "stdio://"],
-                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, start_new_session=True)
-            # Stdout/stderr inherit the PTY. The TUI keeps the user's flags and UI.
-            tui = subprocess.Popen([config["codex"], "--remote", "unix://" + str(socket_path), *user_args])
+            server = subprocess.Popen([config["codex"], *options, "app-server", "--listen", "unix://" + str(backend_path)],
+                                      stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)
+            # Each native client must initialize its own connection. The session
+            # picker uses an auxiliary connection while the main TUI stays open.
             deadline = time.monotonic() + 30
-            while True:
+            while not backend_path.exists():
                 if server.poll() is not None:
                     message = (directory / "app-server.log").read_text(errors="replace")[-1200:]
                     raise RuntimeError("Codex app-server 启动失败：" + message)
-                if tui.poll() is not None:
-                    return tui.returncode
                 if time.monotonic() > deadline:
-                    raise RuntimeError("Codex 界面未连接，请确认 CLI 支持 --remote unix://")
-                try:
-                    connection, _ = server_socket.accept()
-                    break
-                except socket.timeout:
-                    continue
-            with connection:
-                remainder = accept_handshake(connection)
-                decoder = Decoder()
-                os.set_blocking(server.stdout.fileno(), False)
-                selector = selectors.DefaultSelector()
-                selector.register(connection, selectors.EVENT_READ, "ui")
-                selector.register(server.stdout, selectors.EVENT_READ, "server")
-                router = Router(emit)
-                buffer = b""
-                outgoing = bytearray()
-                if remainder:
-                    lines, replies = decoder.feed(remainder)
-                    outgoing.extend(replies)
-                    for line in lines:
-                        server.stdin.write(json.dumps(router.from_ui(json.loads(line)), ensure_ascii=False).encode() + b"\n")
-                        server.stdin.flush()
-                while tui.poll() is None and server.poll() is None:
-                    for key, _ in selector.select(.04):
-                        owner = key.data
-                        try:
-                            data = connection.recv(65536) if owner == "ui" else os.read(server.stdout.fileno(), 65536)
-                        except BlockingIOError:
-                            continue
-                        if not data:
-                            stop.set()
-                            break
-                        if owner == "ui":
-                            lines, replies = decoder.feed(data)
-                            outgoing.extend(replies)
-                            if decoder.closed:
-                                stop.set()
-                        else:
-                            buffer += data
-                            if len(buffer) > 16_000_000:
-                                raise RuntimeError("Codex 协议消息超过大小限制")
-                            lines = []
-                            while b"\n" in buffer:
-                                line, buffer = buffer.split(b"\n", 1)
-                                lines.append(line)
-                        for line in lines:
-                            if not line.strip():
-                                continue
-                            message = json.loads(line)
-                            if owner == "ui":
-                                forwarded = router.from_ui(message)
-                                server.stdin.write(json.dumps(forwarded, ensure_ascii=False).encode() + b"\n")
-                                server.stdin.flush()
-                            else:
-                                forwarded = router.from_server(message)
-                                if forwarded is not None:
-                                    outgoing.extend(encode_frame(json.dumps(forwarded, ensure_ascii=False).encode()))
-                    if stop.is_set():
-                        break
-                    for path in sorted(channel.glob("*.json"))[:20]:
-                        command = None
-                        try:
-                            command = read_json(path)
-                            if command.get("epoch") != epoch or command.get("expires", 0) < time.time():
-                                raise RuntimeError("控制请求已过期或目标会话已重启")
-                            message = router.from_deck(command["id"], command["method"], command["params"], command["thread_id"])
-                            server.stdin.write(json.dumps(message, ensure_ascii=False).encode() + b"\n")
-                            server.stdin.flush()
-                        except Exception as error:
-                            emit({"type": "rpc-result", "request_id": command.get("id") if isinstance(command, dict) else path.stem,
-                                  "error": {"message": str(error)}})
-                        finally:
-                            path.unlink(missing_ok=True)
-                    if outgoing:
-                        try:
-                            sent = connection.send(outgoing)
-                            del outgoing[:sent]
-                        except BlockingIOError:
-                            pass
-                        if len(outgoing) > 32_000_000:
-                            raise RuntimeError("Codex 界面读取过慢，协作连接关闭")
-                selector.close()
-            if tui.poll() is not None:
-                return tui.returncode
-            if server.poll() not in (None, 0):
-                raise RuntimeError("Codex app-server 退出：" + (directory / "app-server.log").read_text(errors="replace")[-1200:])
-            # On normal /quit the TUI may close its socket just before exiting.
-            try:
-                return tui.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                return 1
+                    raise RuntimeError("Codex app-server 本机连接启动超时")
+                time.sleep(.04)
+            os.chmod(backend_path, 0o600)
+            relay = LocalRelay(server_socket, backend_path, channel, epoch, emit,
+                               lambda notify: Router(notify, history_scope))
+            # Stdout/stderr inherit the PTY. All user flags and approval UI stay native.
+            tui = subprocess.Popen([config["codex"], "--remote", "unix://" + str(socket_path),
+                                    *managed_tui_args(user_args, Path.cwd())])
+            while tui.poll() is None:
+                if server.poll() is not None:
+                    raise RuntimeError("Codex app-server 退出：" + (directory / "app-server.log").read_text(errors="replace")[-1200:])
+                relay.step()
+            return tui.returncode
     finally:
+        if relay:
+            relay.close()
+        else:
+            server_socket.close()
         for process in (tui, server):
             if process and process.poll() is None:
                 process.terminate()
@@ -265,8 +259,8 @@ def run_managed(config, user_args, callback):
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
-        server_socket.close()
         socket_path.unlink(missing_ok=True)
+        backend_path.unlink(missing_ok=True)
         emit({"type": "agent-disconnected"})
         for signum, handler in old_handlers.items():
             signal.signal(signum, handler)

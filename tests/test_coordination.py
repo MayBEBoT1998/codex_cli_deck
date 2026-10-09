@@ -9,7 +9,7 @@ import selectors
 from types import SimpleNamespace
 
 from codex_deck.coordination import Coordinator
-from codex_deck.codex_relay import Router, supports_managed
+from codex_deck.codex_relay import Router, supports_managed, managed_tui_args
 from codex_deck.core import ROOT
 from codex_deck.ipc import read_json, write_json
 from codex_deck.local_websocket import Decoder, encode_frame
@@ -202,6 +202,30 @@ class CoordinationTests(unittest.TestCase):
         self.assertFalse(self.hub.pending)
         self.assertFalse(list(self.hub.agents['b'].channel.glob('*.json')))
 
+    def test_lost_connection_after_send_does_not_claim_dispatch_failed(self):
+        self.hub.set_grants("a", ["b"])
+        task = self.hub.dispatch("a", "b", "task", "one", deliver=False)
+        self.hub.tick()
+        command = self.command("b")
+        self.event("b", {"type": "rpc-result", "request_id": command["id"],
+                         "error": {"message": "Connection closed after send", "outcomeUnknown": True}})
+        self.assertEqual(task.status, "unknown")
+        self.hub.tick()
+        self.assertFalse(self.hub.pending)
+
+    def test_lost_report_connection_does_not_allow_duplicate_delivery_retry(self):
+        self.hub.set_grants("a", ["b"])
+        task = self.hub.dispatch("a", "b", "task", "one")
+        self.start(task)
+        self.complete(task)
+        self.hub.tick()
+        command = self.command("a")
+        self.event("a", {"type": "rpc-result", "request_id": command["id"],
+                         "error": {"message": "Connection closed after send", "outcomeUnknown": True}})
+        self.assertEqual(task.delivery_status, "unknown")
+        with self.assertRaises(ValueError):
+            self.hub.retry_delivery(task.id)
+
     def test_mcp_stdio_process_lists_then_dispatches_using_private_mailbox(self):
         self.hub.set_grants("b", ["c"])
         config = self.root / "mcp.json"
@@ -239,6 +263,23 @@ class CoordinationTests(unittest.TestCase):
 
 
 class RelayTests(unittest.TestCase):
+    def test_managed_resume_receives_actual_project_directory(self):
+        self.assertEqual(managed_tui_args(["resume"], "/tmp/project with space"),
+                         ["--cd", "/tmp/project with space", "resume"])
+        self.assertEqual(managed_tui_args([], "/tmp/project"), ["--cd", "/tmp/project"])
+
+    def test_explicit_directory_and_global_history_request_are_preserved(self):
+        for args in (["resume", "--cd", "../project-b"], ["-C", "/tmp/project-b", "resume"],
+                     ["resume", "--cd=../project-b"], ["-C../project-b", "resume"]):
+            self.assertEqual(managed_tui_args(args, "/tmp/project-a"), args)
+        self.assertEqual(managed_tui_args(["resume", "--all"], "/tmp/project"),
+                         ["--cd", "/tmp/project", "resume", "--all"])
+
+    def test_directory_flag_inside_prompt_or_option_value_is_not_reinterpreted(self):
+        for args in (["--", "--cd", "example"], ["-c", "--cd=not-a-flag", "resume"],
+                     ["resume", "Explain what --cd does"]):
+            self.assertEqual(managed_tui_args(args, "/tmp/project"), ["--cd", "/tmp/project", *args])
+
     def test_initialization_handles_null_capabilities_and_preserves_other_options(self):
         router = Router(lambda event: None)
         result = router.from_ui({"id": 1, "method": "initialize", "params": {"capabilities": None}})
@@ -310,6 +351,15 @@ class WebSocketTests(unittest.TestCase):
             self.assertEqual(Decoder().feed(self.client_frame(b"x" * count))[0], ["x" * count])
         with self.assertRaises(ValueError):
             Decoder().feed(encode_frame(b"unmasked"))
+
+    def test_backend_decoder_replies_with_masked_pong(self):
+        decoder = Decoder(expect_masked=False)
+        messages, replies = decoder.feed(encode_frame('返回中文'.encode()) + encode_frame(b'ping', 9))
+        self.assertEqual(messages, ['返回中文'])
+        self.assertTrue(replies[1] & 128)
+        self.assertEqual(Decoder().feed(replies), ([], bytearray()))
+        with self.assertRaises(ValueError):
+            Decoder(expect_masked=False).feed(encode_frame(b'incorrect mask', masked=True))
 
 
 if __name__ == "__main__":
